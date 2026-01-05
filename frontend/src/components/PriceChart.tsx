@@ -11,14 +11,14 @@ const PriceChart = ({ data, earningsDate }: PriceChartProps) => {
             <LineChart data={data} margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>
                 <defs>
                     <linearGradient id="lineGradient" x1="0" y1="0" x2="0" y2="1">
-                        <stop offset="5%" stopColor="#FE0018" stopOpacity={0.1} />
-                        <stop offset="95%" stopColor="#FE0018" stopOpacity={0} />
+                        <stop offset="5%" stopColor="#FF3B30" stopOpacity={0.2} />
+                        <stop offset="95%" stopColor="#FF3B30" stopOpacity={0} />
                     </linearGradient>
                 </defs>
-                <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" vertical={false} />
+                <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.03)" vertical={false} />
                 <XAxis
                     dataKey="date"
-                    stroke="rgba(255,255,255,0.3)"
+                    stroke="rgba(255,255,255,0.2)"
                     fontSize={10}
                     tickLine={false}
                     axisLine={false}
@@ -29,7 +29,7 @@ const PriceChart = ({ data, earningsDate }: PriceChartProps) => {
                     minTickGap={40}
                 />
                 <YAxis
-                    stroke="rgba(255,255,255,0.3)"
+                    stroke="rgba(255,255,255,0.2)"
                     fontSize={10}
                     tickLine={false}
                     axisLine={false}
@@ -38,27 +38,28 @@ const PriceChart = ({ data, earningsDate }: PriceChartProps) => {
                 />
                 <Tooltip
                     contentStyle={{
-                        backgroundColor: '#161618',
+                        backgroundColor: '#121214',
                         border: '1px solid rgba(255,255,255,0.1)',
-                        borderRadius: '8px',
-                        fontSize: '12px'
+                        borderRadius: '12px',
+                        fontSize: '12px',
+                        boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.5)'
                     }}
-                    itemStyle={{ color: '#FE0018' }}
+                    itemStyle={{ color: '#FF3B30', fontWeight: 'bold' }}
                 />
                 <ReferenceArea
                     x1={earningsDate}
                     x2={data[data.length - 1].date}
                     strokeOpacity={0.3}
-                    fill="rgba(255,255,255,0.05)"
-                    label={{ position: 'top', value: 'Post-Earnings', fill: 'rgba(255,255,255,0.3)', fontSize: 10 }}
+                    fill="rgba(255,255,255,0.02)"
+                    label={{ position: 'top', value: 'POST-EARNINGS', fill: 'rgba(255,255,255,0.2)', fontSize: 9, fontWeight: 'bold' }}
                 />
                 <Line
                     type="monotone"
                     dataKey="price"
-                    stroke="#FE0018"
-                    strokeWidth={2}
+                    stroke="#FF3B30"
+                    strokeWidth={3}
                     dot={false}
-                    activeDot={{ r: 4, strokeWidth: 0, fill: '#FE0018' }}
+                    activeDot={{ r: 6, strokeWidth: 0, fill: '#FF3B30' }}
                     animationDuration={1500}
                 />
             </LineChart>

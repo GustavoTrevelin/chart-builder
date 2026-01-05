@@ -1,6 +1,7 @@
 import { useState } from 'react'
-import { Search, Calendar, TrendingUp, TrendingDown, ArrowLeftRight } from 'lucide-react'
+import { Search, Calendar, TrendingUp, TrendingDown, ArrowLeftRight, Activity, Zap, BarChart3, Info } from 'lucide-react'
 import PriceChart from './components/PriceChart'
+import { Skeleton, StatCardSkeleton, ChartSkeleton } from './components/Skeleton'
 
 interface ChartData {
     ticker: string
@@ -30,6 +31,7 @@ function App() {
     const [loading, setLoading] = useState(false)
     const [error, setError] = useState<string | null>(null)
     const [chartData, setChartData] = useState<ChartData | null>(null)
+    const [hasSearched, setHasSearched] = useState(false)
 
     const handleSearch = async (e: React.FormEvent) => {
         e.preventDefault()
@@ -37,73 +39,122 @@ function App() {
 
         setLoading(true)
         setError(null)
+        setHasSearched(true)
+        setChartData(null) // Clear previous data so we show skeletons
         try {
             const response = await fetch(`/api/chart/${ticker.toUpperCase()}?earnings_date=${earningsDate}`)
             if (!response.ok) {
-                throw new Error('Failed to fetch data. Check ticker and date format (YYYY-MM-DD).')
+                const errorData = await response.json().catch(() => ({ detail: 'Unknown network error' }))
+                throw new Error(errorData.detail || 'Data not found. Please verify ticker symbol and date.')
             }
             const data = await response.json()
             setChartData(data)
         } catch (err: any) {
             setError(err.message)
+            setChartData(null)
         } finally {
             setLoading(false)
         }
     }
 
     return (
-        <div className="min-h-screen w-full p-8 max-w-6xl mx-auto">
-            <header className="mb-12 text-center">
-                <h1 className="text-4xl font-bold mb-2 gradient-text">Earnings Chart Builder</h1>
-                <p className="text-gray-400">Analyze price performance post-earnings with modern precision.</p>
-            </header>
-
-            <div className="glass p-6 mb-8 flex flex-wrap gap-4 items-end justify-center">
+        <div className="min-h-screen w-full px-6 py-12 md:p-12 max-w-6xl mx-auto flex flex-col gap-8">
+            <header className="flex flex-col md:flex-row md:items-end justify-between gap-6 mb-4">
                 <div className="flex flex-col gap-2">
-                    <label className="text-xs font-semibold uppercase tracking-wider text-gray-500">Ticker Symbol</label>
-                    <div className="relative">
-                        <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-500" />
+                    <div className="flex items-center gap-2 text-primary font-bold tracking-tighter text-xl">
+                        <Zap className="w-6 h-6 fill-current" />
+                        STK_METRIC
+                    </div>
+                    <h1 className="text-4xl md:text-5xl font-black gradient-text tracking-tight">Earnings Analysis</h1>
+                    <p className="text-text-secondary text-lg max-w-md">Visualize stock performance surrounding earnings events with high-fidelity analytics.</p>
+                </div>
+
+                <form onSubmit={handleSearch} className="glass p-3 flex flex-col sm:flex-row gap-3 items-center w-full md:w-auto">
+                    <div className="relative w-full sm:w-40">
+                        <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-text-muted" />
                         <input
                             value={ticker}
                             onChange={(e) => setTicker(e.target.value)}
-                            placeholder="e.g. AAPL"
-                            className="pl-10"
+                            placeholder="Ticker"
+                            className="pl-11 bg-transparent border-none focus:ring-0 w-full"
                         />
                     </div>
-                </div>
-                <div className="flex flex-col gap-2">
-                    <label className="text-xs font-semibold uppercase tracking-wider text-gray-500">Earnings Date</label>
-                    <div className="relative">
-                        <Calendar className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-500" />
+                    <div className="h-6 w-[1px] bg-border-color hidden sm:block" />
+                    <div className="relative w-full sm:w-48">
+                        <Calendar className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-text-muted" />
                         <input
                             type="date"
                             value={earningsDate}
                             onChange={(e) => setEarningsDate(e.target.value)}
-                            className="pl-10"
+                            className="pl-11 bg-transparent border-none focus:ring-0 w-full"
                         />
                     </div>
-                </div>
-                <button onClick={handleSearch} disabled={loading} className="px-8">
-                    {loading ? 'Analyzing...' : 'Generate Chart'}
-                </button>
-            </div>
+                    <button type="submit" disabled={loading} className="w-full sm:w-auto">
+                        {loading ? 'Analyzing...' : 'Generate Report'}
+                    </button>
+                </form>
+            </header>
 
             {error && (
-                <div className="bg-red-500/10 border border-red-500/20 text-red-500 p-4 rounded-lg mb-8 text-center">
-                    {error}
+                <div className="p-4 rounded-2xl bg-danger/10 border border-danger/20 text-danger flex items-center gap-3 animate-in fade-in slide-in-from-top-4 duration-300">
+                    <Info className="w-5 h-5 flex-shrink-0" />
+                    <p className="font-medium text-sm">{error}</p>
                 </div>
             )}
 
-            {chartData && (
-                <div className="grid grid-cols-1 gap-8 animate-in fade-in duration-700">
+            {!hasSearched && !loading && (
+                <div className="glass flex-1 min-h-[400px] flex flex-col items-center justify-center p-12 text-center gap-4 border-dashed">
+                    <div className="p-4 bg-primary/10 rounded-full">
+                        <BarChart3 className="w-12 h-12 text-primary" />
+                    </div>
+                    <h3 className="text-2xl font-bold">Ready to analyze?</h3>
+                    <p className="text-text-secondary max-w-sm mb-4">Enter a ticker symbol and an earnings date above to see visual performance metrics and price movements.</p>
+                </div>
+            )}
+
+            {loading && (
+                <div className="flex flex-col gap-8 animate-in fade-in duration-500">
                     <div className="glass p-8">
-                        <div className="flex justify-between items-start mb-6">
-                            <div>
-                                <h2 className="text-3xl font-bold mb-1">{chartData.ticker}</h2>
-                                <p className="text-gray-400">Trading Period: {chartData.data[0].date} to {chartData.latest_date}</p>
+                        <div className="flex justify-between items-start mb-10">
+                            <div className="space-y-3">
+                                <Skeleton className="w-32 h-10 rounded-xl" />
+                                <Skeleton className="w-64 h-4 rounded-full" />
                             </div>
-                            <div className={`text-2xl font-bold px-4 py-2 rounded-lg ${chartData.price_change_pct >= 0 ? 'bg-green-500/10 text-green-500' : 'bg-red-500/10 text-red-500'}`}>
-                                {chartData.price_change_pct >= 0 ? '+' : ''}{chartData.price_change_pct}%
+                            <Skeleton className="w-24 h-12 rounded-xl" />
+                        </div>
+                        <ChartSkeleton />
+                        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6 mt-12">
+                            <StatCardSkeleton />
+                            <StatCardSkeleton />
+                            <StatCardSkeleton />
+                            <StatCardSkeleton />
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {chartData && !loading && (
+                <div className="flex flex-col gap-8 animate-in fade-in slide-in-from-bottom-8 duration-700">
+                    <div className="glass p-8">
+                        <div className="flex justify-between items-start mb-8">
+                            <div>
+                                <div className="flex items-center gap-3 mb-2">
+                                    <h2 className="text-4xl font-black tracking-tight">{chartData.ticker}</h2>
+                                    <div className={`flex items-center gap-1 px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider ${chartData.price_change_pct >= 0 ? 'bg-success/10 text-success' : 'bg-danger/10 text-danger'}`}>
+                                        {chartData.price_change_pct >= 0 ? <TrendingUp className="w-3 h-3" /> : <TrendingDown className="w-3 h-3" />}
+                                        {chartData.price_change_pct >= 0 ? '+' : ''}{chartData.price_change_pct}%
+                                    </div>
+                                </div>
+                                <p className="text-text-secondary flex items-center gap-2 font-medium">
+                                    <Activity className="w-4 h-4" />
+                                    Analysis Period: {chartData.data[0].date} — {chartData.latest_date}
+                                </p>
+                            </div>
+                            <div className="hidden md:block">
+                                <div className="text-right">
+                                    <p className="text-[10px] font-bold text-text-muted uppercase tracking-[0.2em] mb-1">Current Price</p>
+                                    <p className="text-3xl font-black">${chartData.latest_price}</p>
+                                </div>
                             </div>
                         </div>
 
@@ -111,21 +162,21 @@ function App() {
                             <PriceChart data={chartData.data} earningsDate={chartData.earnings_date} />
                         </div>
 
-                        <div className="grid grid-cols-2 md:grid-cols-4 gap-6 mt-12">
+                        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6 mt-12">
                             <StatCard
                                 label="Earnings Price"
                                 value={`$${chartData.earnings_price}`}
                                 icon={<Calendar className="w-5 h-5" />}
-                                subtext={`on ${chartData.earnings_date}`}
+                                subtext={`Reported on ${chartData.earnings_date}`}
                             />
                             <StatCard
-                                label="Latest Price"
+                                label="Current Price"
                                 value={`$${chartData.latest_price}`}
                                 icon={<TrendingUp className="w-5 h-5" />}
-                                subtext={`on ${chartData.latest_date}`}
+                                subtext={`Last updated ${chartData.latest_date}`}
                             />
                             <StatCard
-                                label="1-Day Change"
+                                label="1-Day Reaction"
                                 value={chartData.next_day_change_pct !== null ? `${chartData.next_day_change_pct}%` : 'N/A'}
                                 icon={<ArrowLeftRight className="w-5 h-5" />}
                                 trend={chartData.next_day_change_pct}
@@ -134,7 +185,7 @@ function App() {
                                 label="Price Range"
                                 value={`$${chartData.price_range}`}
                                 icon={<TrendingDown className="w-5 h-5" />}
-                                subtext={`Min: ${chartData.min_price} | Max: ${chartData.max_price}`}
+                                subtext={`L: $${chartData.min_price} | H: $${chartData.max_price}`}
                             />
                         </div>
                     </div>
@@ -146,22 +197,22 @@ function App() {
 
 function StatCard({ label, value, icon, subtext, trend }: StatCardProps) {
     return (
-        <div className="bg-white/5 border border-white/10 p-4 rounded-xl">
-            <div className="flex items-center gap-3 mb-3">
-                <div className="p-2 bg-white/5 rounded-lg text-gray-400">
+        <div className="bg-white/[0.03] border border-white/10 p-5 rounded-2xl hover:bg-white/[0.05] transition-colors group">
+            <div className="flex items-center gap-3 mb-4">
+                <div className="p-2.5 bg-primary/10 rounded-xl text-primary group-hover:scale-110 transition-transform">
                     {icon}
                 </div>
-                <span className="text-xs font-semibold uppercase tracking-wider text-gray-500">{label}</span>
+                <span className="text-[10px] font-bold uppercase tracking-[0.15em] text-text-muted">{label}</span>
             </div>
-            <div className="text-xl font-bold mb-1 flex items-center gap-2">
+            <div className="text-2xl font-black mb-1 flex items-center gap-2">
                 {value}
                 {trend !== undefined && trend !== null && (
-                    <span className={`text-xs ${trend >= 0 ? 'text-green-500' : 'text-red-500'}`}>
-                        {trend >= 0 ? <TrendingUp className="w-3 h-3" /> : <TrendingDown className="w-3 h-3" />}
-                    </span>
+                    <div className={`flex items-center px-2 py-0.5 rounded-md text-[10px] font-bold ${trend >= 0 ? 'bg-success/10 text-success' : 'bg-danger/10 text-danger'}`}>
+                        {trend >= 0 ? '+' : ''}{trend}%
+                    </div>
                 )}
             </div>
-            {subtext && <p className="text-[10px] text-gray-500 font-medium">{subtext}</p>}
+            {subtext && <p className="text-[10px] text-text-muted font-bold tracking-tight uppercase opacity-60 m-0">{subtext}</p>}
         </div>
     )
 }

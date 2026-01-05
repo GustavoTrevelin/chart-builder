@@ -50,16 +50,30 @@ async def get_chart_data(ticker: str, earnings_date: str):
         # Parse earnings date
         e_date = datetime.strptime(earnings_date, "%Y-%m-%d")
 
-        # Download 1 year of data
-        df = yf.download(ticker, period="1y")
+        # Download 400 days of data to ensure we have a full year of trading days
+        # Use progress=False to keep logs clean and auto_adjust=True for split/dividend adjusted prices
+        df = yf.download(ticker, period="2y", progress=False, auto_adjust=True)
+        
         if df.empty:
-            raise HTTPException(status_code=404, detail=f"No data found for {ticker}")
+            raise HTTPException(status_code=404, detail=f"No data found for ticker '{ticker}'.")
 
-        # Clean up data
+        # Clean up data - ensure we have a 'Close' column (or 'Close' equivalents)
+        # yfinance can sometimes return multi-index columns depending on version/ticker
+        if isinstance(df.columns, pd.MultiIndex):
+            df.columns = df.columns.get_level_values(0)
+            
+        if "Close" not in df.columns:
+            # Fallback for different yfinance versions or data types
+            if "Price" in df.columns:
+                df["Close"] = df["Price"]
+            else:
+                raise HTTPException(status_code=500, detail="Unexpected data format from provider.")
+
         df = df[["Close"]].copy()
         df.columns = ["Price"]
         df.index.name = "Date"
         df.sort_index(inplace=True)
+        df = df.dropna(subset=["Price"]) # Final safety check
 
         trading_dates = df.index.tolist()
 
