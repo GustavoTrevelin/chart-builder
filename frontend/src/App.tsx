@@ -26,6 +26,8 @@ interface StatCardProps {
     trend?: number | null
 }
 
+type DateFilter = '1M' | '3M' | '6M' | 'ALL'
+
 function App() {
     const [ticker, setTicker] = useState('')
     const [earningsDate, setEarningsDate] = useState('')
@@ -33,19 +35,62 @@ function App() {
     const [error, setError] = useState<string | null>(null)
     const [chartData, setChartData] = useState<ChartData | null>(null)
     const [hasSearched, setHasSearched] = useState(false)
+    const [dateFilter, setDateFilter] = useState<DateFilter>('ALL')
     const chartRef = useRef<HTMLDivElement>(null)
 
+    const filterChartData = (data: ChartData, filter: DateFilter) => {
+        if (filter === 'ALL') return data
+
+        const daysMap: Record<DateFilter, number> = {
+            '1M': 30,
+            '3M': 90,
+            '6M': 180,
+            'ALL': 0
+        }
+
+        const days = daysMap[filter]
+        const latestDate = new Date(data.latest_date)
+        const cutoffDate = new Date(latestDate)
+        cutoffDate.setDate(cutoffDate.getDate() - days)
+
+        const filteredData = data.data.filter(item => {
+            const itemDate = new Date(item.date)
+            return itemDate >= cutoffDate
+        })
+
+        // Recalculate statistics for filtered data
+        const prices = filteredData.map(item => item.price)
+        const minPrice = Math.min(...prices)
+        const maxPrice = Math.max(...prices)
+        const priceRange = maxPrice - minPrice
+
+        return {
+            ...data,
+            data: filteredData,
+            min_price: minPrice,
+            max_price: maxPrice,
+            price_range: priceRange
+        }
+    }
+
     const handleDownloadPNG = async () => {
-        if (chartRef.current === null) return
+        if (chartRef.current === null || chartData === null) return
+
+        const printOnlyElements = chartRef.current.querySelectorAll('.print-only')
 
         try {
+            // Temporarily show the print-only elements
+            printOnlyElements.forEach(el => {
+                (el as HTMLElement).style.display = 'block'
+            })
+
             const dataUrl = await toPng(chartRef.current, {
                 backgroundColor: 'transparent',
                 pixelRatio: 2
             })
 
             const link = document.createElement('a')
-            link.download = `${chartData?.ticker || 'chart'}-earnings-analysis.png`
+            link.download = `${chartData.ticker}-earnings-analysis.png`
             link.href = dataUrl
             document.body.appendChild(link)
             link.click()
@@ -53,6 +98,11 @@ function App() {
         } catch (err) {
             console.error('Failed to capture chart image:', err)
             setError('Failed to generate PNG. Please try again or use a different browser.')
+        } finally {
+            // Always hide the print-only elements, even if capture failed
+            printOnlyElements.forEach(el => {
+                (el as HTMLElement).style.display = 'none'
+            })
         }
     }
 
@@ -64,6 +114,7 @@ function App() {
         setError(null)
         setHasSearched(true)
         setChartData(null) // Clear previous data so we show skeletons
+        setDateFilter('ALL') // Reset filter on new search
         try {
             const response = await fetch(`/api/chart/${ticker.toUpperCase()}?earnings_date=${earningsDate}`)
             if (!response.ok) {
@@ -86,7 +137,7 @@ function App() {
                 <div className="flex flex-col gap-2">
                     <div className="flex items-center gap-2 text-primary font-bold tracking-tighter text-xl">
                         <Zap className="w-6 h-6 fill-current" />
-                        STK_METRIC
+                        MXI2
                     </div>
                     <h1 className="text-4xl md:text-5xl font-black gradient-text tracking-tight">Earnings Analysis</h1>
                     <p className="text-text-secondary text-lg max-w-md">Visualize stock performance surrounding earnings events with high-fidelity analytics.</p>
@@ -170,7 +221,7 @@ function App() {
                                 </div>
                                 <p className="text-text-secondary flex items-center gap-2 font-medium">
                                     <Activity className="w-4 h-4" />
-                                    Analysis Period: {chartData.data[0].date} — {chartData.latest_date}
+                                    Analysis Period: {filterChartData(chartData, dateFilter).data[0]?.date || chartData.data[0].date} — {chartData.latest_date}
                                 </p>
                             </div>
                             <div className="hidden md:block">
@@ -181,8 +232,23 @@ function App() {
                             </div>
                         </div>
 
+                        <div className="flex items-center gap-2 mb-6 flex-wrap">
+                            {(['1M', '3M', '6M', 'ALL'] as DateFilter[]).map((filter) => (
+                                <DateFilterButton
+                                    key={filter}
+                                    filter={filter}
+                                    isActive={dateFilter === filter}
+                                    onClick={() => setDateFilter(filter)}
+                                />
+                            ))}
+                        </div>
+
                         <div className="chart-container" ref={chartRef}>
-                            <PriceChart data={chartData.data} earningsDate={chartData.earnings_date} />
+                            <div className="print-only mb-4">
+                                <h3 className="text-2xl font-black tracking-tight mb-1">{chartData.ticker} - Post-Earnings Analysis</h3>
+                                <p className="text-sm text-text-secondary">Earnings Date: {chartData.earnings_date}</p>
+                            </div>
+                            <PriceChart data={filterChartData(chartData, dateFilter).data} earningsDate={chartData.earnings_date} />
                         </div>
                         <div className="flex justify-end mt-4">
                             <button
@@ -215,15 +281,35 @@ function App() {
                             />
                             <StatCard
                                 label="Price Range"
-                                value={`$${chartData.price_range}`}
+                                value={`$${filterChartData(chartData, dateFilter).price_range.toFixed(2)}`}
                                 icon={<TrendingDown className="w-5 h-5" />}
-                                subtext={`L: $${chartData.min_price} | H: $${chartData.max_price}`}
+                                subtext={`L: $${filterChartData(chartData, dateFilter).min_price.toFixed(2)} | H: $${filterChartData(chartData, dateFilter).max_price.toFixed(2)}`}
                             />
                         </div>
                     </div>
                 </div>
             )}
         </div>
+    )
+}
+
+interface DateFilterButtonProps {
+    filter: DateFilter
+    isActive: boolean
+    onClick: () => void
+}
+
+function DateFilterButton({ filter, isActive, onClick }: DateFilterButtonProps) {
+    return (
+        <button
+            onClick={onClick}
+            className={`px-4 py-2 rounded-xl font-bold text-sm transition-all duration-300 ${isActive
+                ? 'bg-primary text-white shadow-lg shadow-primary/30 scale-105'
+                : 'bg-white/[0.03] border border-white/10 text-text-secondary hover:bg-white/[0.08] hover:border-white/20'
+                }`}
+        >
+            {filter}
+        </button>
     )
 }
 

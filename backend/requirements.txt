@@ -3,3 +3,8 @@ uvicorn
 yfinance
 pandas
 python-multipart
+
+# Dev dependencies
+ruff
+black
+mypy

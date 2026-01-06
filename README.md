@@ -12,7 +12,8 @@ A modern, interactive web application to analyze stock price performance followi
     - Post-earnings price performance percentage.
     - 1-day change analysis.
     - Price range (Min/Max) for the past year.
-- **Export Options**: Download high-quality PNG charts with transparent backgrounds for easy sharing.
+- **Date Filtering**: Toggle between 1M, 3M, 6M, and ALL timeframes to focus on specific periods.
+- **Export Options**: Download high-quality PNG charts with auto-generated titles (Ticker + Earnings Date) for professional sharing.
 
 ## Project Structure
 

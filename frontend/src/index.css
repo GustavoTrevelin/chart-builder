@@ -461,3 +461,8 @@ button:disabled {
 ::-webkit-scrollbar-thumb:hover {
   background: var(--text-muted);
 }
+
+/* Print/Export Only - Hidden in web view, visible in PNG export via JS */
+.print-only {
+  display: none;
+}

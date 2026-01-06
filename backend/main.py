@@ -49,9 +49,11 @@ async def get_chart_data(ticker: str, earnings_date: str):
     try:
         # Parse earnings date
         e_date = datetime.strptime(earnings_date, "%Y-%m-%d")
-        
+
         if e_date > datetime.now():
-            raise HTTPException(status_code=400, detail="Earnings date cannot be in the future.")
+            raise HTTPException(
+                status_code=400, detail="Earnings date cannot be in the future."
+            )
 
         # Download 400 days of data to ensure we have a full year of trading days
         # Use progress=False to keep logs clean and auto_adjust=True for split/dividend adjusted prices
