@@ -248,7 +248,9 @@ function App() {
                                 <h3 className="text-2xl font-black tracking-tight mb-1">{chartData.ticker} - Post-Earnings Analysis</h3>
                                 <p className="text-sm text-text-secondary">Earnings Date: {chartData.earnings_date}</p>
                             </div>
-                            <PriceChart data={filterChartData(chartData, dateFilter).data} earningsDate={chartData.earnings_date} />
+                            <div style={{ height: 450, width: '100%' }}>
+                                <PriceChart data={filterChartData(chartData, dateFilter).data} earningsDate={chartData.earnings_date} />
+                            </div>
                         </div>
                         <div className="flex justify-end mt-4">
                             <button
@@ -288,8 +290,9 @@ function App() {
                         </div>
                     </div>
                 </div>
-            )}
-        </div>
+            )
+            }
+        </div >
     )
 }
 
