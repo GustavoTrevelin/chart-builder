@@ -1,5 +1,6 @@
-import { useState } from 'react'
-import { Search, Calendar, TrendingUp, TrendingDown, ArrowLeftRight, Activity, Zap, BarChart3, Info } from 'lucide-react'
+import { useState, useRef } from 'react'
+import { Search, Calendar, TrendingUp, TrendingDown, ArrowLeftRight, Activity, Zap, BarChart3, Info, Download } from 'lucide-react'
+import { toPng } from 'html-to-image'
 import PriceChart from './components/PriceChart'
 import { Skeleton, StatCardSkeleton, ChartSkeleton } from './components/Skeleton'
 
@@ -32,6 +33,28 @@ function App() {
     const [error, setError] = useState<string | null>(null)
     const [chartData, setChartData] = useState<ChartData | null>(null)
     const [hasSearched, setHasSearched] = useState(false)
+    const chartRef = useRef<HTMLDivElement>(null)
+
+    const handleDownloadPNG = async () => {
+        if (chartRef.current === null) return
+
+        try {
+            const dataUrl = await toPng(chartRef.current, {
+                backgroundColor: 'transparent',
+                pixelRatio: 2
+            })
+
+            const link = document.createElement('a')
+            link.download = `${chartData?.ticker || 'chart'}-earnings-analysis.png`
+            link.href = dataUrl
+            document.body.appendChild(link)
+            link.click()
+            document.body.removeChild(link)
+        } catch (err) {
+            console.error('Failed to capture chart image:', err)
+            setError('Failed to generate PNG. Please try again or use a different browser.')
+        }
+    }
 
     const handleSearch = async (e: React.FormEvent) => {
         e.preventDefault()
@@ -158,8 +181,17 @@ function App() {
                             </div>
                         </div>
 
-                        <div className="chart-container">
+                        <div className="chart-container" ref={chartRef}>
                             <PriceChart data={chartData.data} earningsDate={chartData.earnings_date} />
+                        </div>
+                        <div className="flex justify-end mt-4">
+                            <button
+                                onClick={handleDownloadPNG}
+                                className="flex items-center gap-2 py-2 px-4 text-sm bg-white/5 hover:bg-white/10 border border-white/10"
+                            >
+                                <Download className="w-4 h-4" />
+                                Download PNG
+                            </button>
                         </div>
 
                         <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6 mt-12">

@@ -12,6 +12,7 @@ A modern, interactive web application to analyze stock price performance followi
     - Post-earnings price performance percentage.
     - 1-day change analysis.
     - Price range (Min/Max) for the past year.
+- **Export Options**: Download high-quality PNG charts with transparent backgrounds for easy sharing.
 
 ## Project Structure
 

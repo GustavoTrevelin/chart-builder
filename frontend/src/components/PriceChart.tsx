@@ -23,7 +23,8 @@ const PriceChart = ({ data, earningsDate }: PriceChartProps) => {
                     tickLine={false}
                     axisLine={false}
                     tickFormatter={(str) => {
-                        const date = new Date(str);
+                        const [year, month, day] = str.split('-').map(Number);
+                        const date = new Date(year, month - 1, day);
                         return date.toLocaleDateString('en-US', { month: 'short', year: '2-digit' });
                     }}
                     minTickGap={40}
