@@ -8,7 +8,7 @@ interface PriceChartProps {
 const PriceChart = ({ data, earningsDate }: PriceChartProps) => {
     return (
         <ResponsiveContainer width="100%" height="100%">
-            <LineChart data={data} margin={{ top: 30, right: 10, left: 45, bottom: 30 }}>
+            <LineChart data={data} margin={{ top: 30, right: 10, left: 0, bottom: 30 }}>
                 <defs>
                     <linearGradient id="lineGradient" x1="0" y1="0" x2="0" y2="1">
                         <stop offset="5%" stopColor="#FF3B30" stopOpacity={0.2} />
@@ -36,6 +36,7 @@ const PriceChart = ({ data, earningsDate }: PriceChartProps) => {
                     axisLine={false}
                     domain={['auto', 'auto']}
                     tickFormatter={(val) => `$${val}`}
+                    width={40}
                 />
                 <Tooltip
                     contentStyle={{
